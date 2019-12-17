@@ -76,10 +76,6 @@ void vtkJSONSceneExporter::WriteDataObject(ostream& os, vtkDataObject* dataObjec
   // Handle Dataset
   if (dataObject->IsA("vtkDataSet"))
   {
-    // TODO: for composite data sets, the textures and texture LODs
-    // would be written out multiple times here. Perhaps we should
-    // re-think this? Or, if composite data sets normally don't have
-    // textures, this is probably fine...
     std::string texturesString;
     if (this->WriteTextures && actor->GetTexture())
     {
@@ -398,6 +394,13 @@ size_t getFileSize(const std::string& path)
 
 std::string vtkJSONSceneExporter::WriteTexture(vtkTexture* texture)
 {
+  // If this texture has already been written, just re-use the one
+  // we have.
+  if (this->TextureStrings.find(texture) != this->TextureStrings.end())
+  {
+    return this->TextureStrings[texture];
+  }
+
   std::string path = this->CurrentDataSetPath();
 
   // Make sure it exists
@@ -421,6 +424,7 @@ std::string vtkJSONSceneExporter::WriteTexture(vtkTexture* texture)
   std::stringstream config;
   config << ",\n" << INDENT << "\"texture\": \"" << this->DatasetCount + 1
          << "/texture.jpg\"";
+  this->TextureStrings[texture] = config.str();
   return config.str();
 }
 
@@ -428,6 +432,13 @@ std::string vtkJSONSceneExporter::WriteTexture(vtkTexture* texture)
 
 std::string vtkJSONSceneExporter::WriteTextureLODSeries(vtkTexture* texture)
 {
+  // If this texture has already been written, just re-use the one
+  // we have.
+  if (this->TextureLODStrings.find(texture) != this->TextureLODStrings.end())
+  {
+    return this->TextureLODStrings[texture];
+  }
+
   std::vector<std::string> files;
 
   std::string name = "texture";
@@ -506,6 +517,7 @@ std::string vtkJSONSceneExporter::WriteTextureLODSeries(vtkTexture* texture)
   config << INDENT << "  ]\n"
          << INDENT << "}";
 
+  this->TextureLODStrings[texture] = config.str();
   return config.str();
 }
 
